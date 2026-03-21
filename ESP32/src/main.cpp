@@ -36,7 +36,7 @@ String fetchString(String url) {
 }
 
 void checkAndUpdate() {
-    Serial.println("Kontroluji verzi...dx");
+    Serial.println("Kontroluji verzi...newversion");
     String latestSHA = fetchString(VERSION_URL);
     if (latestSHA.isEmpty()) {
         Serial.println("Nepodarilo se ziskat verzi.");
