@@ -88,7 +88,7 @@ bool update() {
         webLog("Zkouším číst měnič...");
 
         if (readBatteryData()) {
-            status_msg = "SPOJENO OK";
+            status_msg = "SPOJENO OK.";
             webLog(">>> Modbus komunikace OK!");
             webLog("P: " + String(battery_P) + " kW, SOC: " + String(battery_soc) + " %, I: " + String(battery_I) + " A, Grid: " + String(grid_I) + " A");
             return true;
@@ -98,7 +98,7 @@ bool update() {
             return false;
         }
     }
-    return true; // OK, ale bez nového čtení
+    return false; // OK, ale bez nového čtení
 }
 
 } // namespace ModbusHandler

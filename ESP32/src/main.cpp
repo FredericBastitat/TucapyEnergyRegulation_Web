@@ -9,7 +9,7 @@
 
 #define WIFI_SSID "DvorNet"
 #define WIFI_PASS "dvor62tuc"
-#define FIRMWARE_VERSION "2026-03-21 21:55"
+String currentVersion = "USB-Manual";
 
 // --- OVLÁDÁNÍ VÝSTUPŮ ---
 #define OUT1 19
@@ -49,14 +49,14 @@ void handleRoot() {
     ModbusHandler::battery_soc, 
     ModbusHandler::status_msg, 
     logBuffer, 
-    FIRMWARE_VERSION));
+    currentVersion));
 }
 
 void turn_on()
 {
     if(idx<n_outputs)
     {
-        digitalWrite(outputs[idx],HIGH);
+        digitalWrite(outputs[idx],LOW);
         idx++;
     }
     return;
@@ -66,7 +66,7 @@ void turn_off()
 
     if (idx>0)idx--;
     else return;
-    digitalWrite(outputs[idx],LOW);
+    digitalWrite(outputs[idx],HIGH);
     return;
 }
 
@@ -81,18 +81,31 @@ void setup() {
     // Inicializace výstupů
     for (int pin : outputs) {
         pinMode(pin, OUTPUT);
-        digitalWrite(pin, LOW);
+        digitalWrite(pin, HIGH);
     }
     
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     
+    // Čekáme na WiFi pro správný start OTA a logů
+    int att = 0;
+    while (WiFi.status() != WL_CONNECTED && att < 30) {
+        delay(500);
+        Serial.print(".");
+        att++;
+    }
+
+    // Načteme SHA z paměti pro UI Dashboard
+    currentVersion = OTA::getCurrentSHA();
+    if (currentVersion == "") currentVersion = "Manual-USB";
+    else currentVersion = currentVersion.substring(0, 7);
+
     server.on("/", handleRoot);
     server.begin();
 
     webSocket.begin();
     webSocket.onEvent(onWebSocketEvent);
 
-    webLog("Start systemu - verze " + String(FIRMWARE_VERSION));
+    webLog("Start systemu - verze " + currentVersion);
 }
 
 void loop() {
@@ -109,10 +122,22 @@ void loop() {
     // Čtení dat z měniče
     if(ModbusHandler::update())
     {
+        static unsigned long lastSwitch = 0;
+        
         if(ModbusHandler::battery_soc<SPODNI_SOC)power_mode=false;
         if(ModbusHandler::battery_soc>=HORNI_SOC)power_mode=true;
-        if(power_mode && (ModbusHandler::battery_I>=HORNI_PROUD))turn_on();
-        if(power_mode && (ModbusHandler::battery_I<=SPODNI_PROUD))turn_off();
+        
+        // Mezi přepnutím stupňů čekáme aspoň 10 vteřin pro ustálení
+        if (millis() - lastSwitch > 10000) {
+            if(power_mode && (ModbusHandler::battery_I>=HORNI_PROUD)) {
+                turn_on();
+                lastSwitch = millis();
+            }
+            if(power_mode && (ModbusHandler::battery_I<=SPODNI_PROUD)) {
+                turn_off();
+                lastSwitch = millis();
+            }
+        }
     }
     
 }
