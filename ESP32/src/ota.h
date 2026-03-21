@@ -2,6 +2,8 @@
 #include <HTTPClient.h>
 #include <Update.h>
 #include <Preferences.h>
+#include "logger.h"
+
 
 #define VERSION_URL  "https://raw.githubusercontent.com/FredericBastitat/TucapyEnergyRegulation/main/version.txt"
 #define FIRMWARE_URL "https://raw.githubusercontent.com/FredericBastitat/TucapyEnergyRegulation/main/firmware.bin"
@@ -28,36 +30,42 @@ String fetchString(String url) {
     http.begin(url);
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     int code = http.GET();
-    Serial.printf("HTTP GET %s -> %d\n", url.c_str(), code);
+    webLog("HTTP GET " + url + " -> " + String(code));
+
     String result = "";
     if (code == 200) {
         result = http.getString();
         result.trim();
     } else {
-        Serial.printf("Chyba: %s\n", http.errorToString(code).c_str());
+        webLog("Chyba: " + http.errorToString(code));
     }
+
     http.end();
     return result;
 }
 
 void check() {
-    Serial.println("Kontroluji verzi...");
+    webLog("Kontroluji verzi...");
     String latestSHA = fetchString(VERSION_URL);
     if (latestSHA.isEmpty()) {
-        Serial.println("Nepodarilo se ziskat verzi.");
+        webLog("Nepodarilo se ziskat verzi.");
         return;
     }
+
 
     String currentSHA = getCurrentSHA();
-    Serial.println("Ulozena SHA:  " + currentSHA);
-    Serial.println("GitHub SHA:   " + latestSHA);
+    webLog("Ulozena SHA:  " + currentSHA);
+    webLog("GitHub SHA:   " + latestSHA);
+
 
     if (latestSHA == currentSHA) {
-        Serial.println("✓ Firmware je aktualni.");
+        webLog("✓ Firmware je aktualni.");
         return;
     }
 
-    Serial.println("Novy firmware nalezen, stahuji...");
+
+    webLog("Novy firmware nalezen, stahuji...");
+
     HTTPClient http;
     http.begin(FIRMWARE_URL);
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -71,14 +79,16 @@ void check() {
             Update.writeStream(*stream);
             if (Update.end(true)) {
                 saveSHA(latestSHA);
-                Serial.println("Update OK, restartuji...");
+                webLog("Update OK, restartuji...");
                 ESP.restart();
+
             } else {
-                Update.printError(Serial);
+                webLog("Update Error: " + String(Update.errorString()));
             }
         } else {
-            Update.printError(Serial);
+            webLog("Update Error: " + String(Update.errorString()));
         }
+
     }
     http.end();
 }
