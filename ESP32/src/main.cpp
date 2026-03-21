@@ -45,7 +45,7 @@ void handleRoot() {
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
 
     pinMode(DE_RE_PIN, OUTPUT);
     digitalWrite(DE_RE_PIN, LOW);
