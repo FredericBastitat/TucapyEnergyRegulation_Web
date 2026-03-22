@@ -158,5 +158,7 @@ void loop() {
             ModbusHandler::status_msg,
             currentVersion
         );
+        // Odeslání konzolových logů do Firebase pro Vercel dashboard
+        FirebaseHandler::pushConsoleLogs(logBuffer);
     }
 }

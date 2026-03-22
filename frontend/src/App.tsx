@@ -54,7 +54,7 @@ const App: React.FC = () => {
   // Handle Authentication and Firebase connection
   useEffect(() => {
     let unsubscribeEnergy: () => void;
-    let unsubscribeLogs: () => void;
+    let unsubscribeConsole: () => void;
 
     // Securely sign in anonymously
     signInAnonymously(auth)
@@ -62,7 +62,7 @@ const App: React.FC = () => {
         setData(prev => ({ ...prev, authenticated: true }));
         
         const energyRef = ref(db, 'energy_data');
-        const logsRef = ref(db, 'system_logs');
+        const consoleRef = ref(db, 'console_logs');
 
         // Subscribe to energy updates
         unsubscribeEnergy = onValue(energyRef, (snapshot: any) => {
@@ -88,8 +88,8 @@ const App: React.FC = () => {
           }
         });
 
-        // Subscribe to logs
-        unsubscribeLogs = onValue(logsRef, (snapshot: any) => {
+        // Subscribe to console logs from ESP32
+        unsubscribeConsole = onValue(consoleRef, (snapshot: any) => {
           if (snapshot.exists()) {
             const logVal = snapshot.val();
             const logBody = typeof logVal === 'string' ? logVal : JSON.stringify(logVal, null, 2);
@@ -107,7 +107,7 @@ const App: React.FC = () => {
 
     return () => {
       if (unsubscribeEnergy) unsubscribeEnergy();
-      if (unsubscribeLogs) unsubscribeLogs();
+      if (unsubscribeConsole) unsubscribeConsole();
     };
   }, []);
 

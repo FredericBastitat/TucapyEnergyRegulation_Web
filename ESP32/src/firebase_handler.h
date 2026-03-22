@@ -4,8 +4,6 @@
 #include <addons/RTDBHelper.h>
 #include "logger.h"
 
-// Define these in your private config or use placeholders
-// Pokud používáte novější verzi knihovny Mobizt, URL má být většinou bez "https://"
 #define FIREBASE_DATABASE_URL "tucapyenergy-default-rtdb.europe-west1.firebasedatabase.app"
 #define API_KEY "AIzaSyAA9CCYeT44Mt8BLOkqpL4uu3cp5gpaevs"
 
@@ -14,25 +12,41 @@ namespace FirebaseHandler {
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
+bool firebaseReady = false;
 
 void setup() {
     config.database_url = FIREBASE_DATABASE_URL;
     config.api_key = API_KEY;
     
-    // Test mode vypnut - nyní vyžadujeme autentizaci (anonymní nebo email)
-    config.signer.test_mode = false;
+    // Test mode – ESP32 nemá přihlašovací údaje, takže musí být true
+    config.signer.test_mode = true;
 
     Firebase.begin(&config, &auth);
     Firebase.reconnectWiFi(true);
 
-    // Prvotní zápis – pokud se nezdaří, uvidíme chybu hned v sériovém portu
-    if (!Firebase.RTDB.setString(&fbdo, "/system_logs", "ESP32 System Started (Authenticated)")) {
-        Serial.printf("Firebase log error: %s\n", fbdo.errorReason().c_str());
+    // Počkáme krátce na inicializaci
+    unsigned long t = millis();
+    while (!Firebase.ready() && millis() - t < 5000) {
+        delay(100);
+    }
+
+    firebaseReady = Firebase.ready();
+    if (firebaseReady) {
+        Serial.println("Firebase: READY");
+    } else {
+        Serial.println("Firebase: NOT READY after 5s");
     }
 }
 
 void updateData(float battery_P, float battery_I, float grid_I, float battery_soc, String status_msg, String version) {
-    if (!Firebase.ready()) return;
+    if (!Firebase.ready()) {
+        static unsigned long lastWarn = 0;
+        if (millis() - lastWarn > 10000) {
+            webLog("Firebase NOT READY", true);
+            lastWarn = millis();
+        }
+        return;
+    }
 
     FirebaseJson json;
     json.set("battery_P", battery_P);
@@ -41,19 +55,25 @@ void updateData(float battery_P, float battery_I, float grid_I, float battery_so
     json.set("battery_soc", battery_soc);
     json.set("status_msg", status_msg);
     json.set("version", version);
-    json.set("last_update", String(millis()));
+    json.set("last_update", (int)(millis() / 1000));
 
-    if (Firebase.RTDB.setJSON(&fbdo, "/energy_data", &json)) {
-        // OK
-    } else {
-        // Pokud to stále nefunguje, vypíšeme přesnou příčinu
-        webLog("Firebase error (" + String(fbdo.httpCode()) + "): " + fbdo.errorReason(), true);
+    if (!Firebase.RTDB.setJSON(&fbdo, "/energy_data", &json)) {
+        webLog("FB err(" + String(fbdo.httpCode()) + "): " + fbdo.errorReason());
     }
 }
 
-void pushLog(String msg) {
-    if (Firebase.RTDB.setString(&fbdo, "/system_logs", msg)) {
-        // webLog("Firebase log OK");
+// Odesílá konzolové logy do Firebase pro zobrazení ve Vercel app
+void pushConsoleLogs(const String& logBuffer) {
+    if (!Firebase.ready()) return;
+    
+    // Uložíme posledních max 2000 znaků logu
+    String trimmed = logBuffer;
+    if (trimmed.length() > 2000) {
+        trimmed = trimmed.substring(trimmed.length() - 2000);
+    }
+
+    if (!Firebase.RTDB.setString(&fbdo, "/console_logs", trimmed)) {
+        // Tiše ignorujeme chybu konzolových logů
     }
 }
 
