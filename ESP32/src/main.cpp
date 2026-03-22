@@ -20,7 +20,7 @@ String currentVersion = "USB-Manual";
 #define OUT8 27
 const int outputs[] = {OUT1, OUT2, OUT3, OUT4, OUT5, OUT6, OUT7, OUT8};
 const int n_outputs=8;
-#define HORNI_PROUD 0.9
+#define HORNI_PROUD 2
 #define SPODNI_PROUD 0  
 
 #define HORNI_SOC 80
