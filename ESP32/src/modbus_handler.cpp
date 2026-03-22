@@ -11,10 +11,10 @@ String status_msg = "Inicializace Modbus...";
 // Interní pomocné funkce pro přepínání DE/RE
 void preTransmission() { 
     digitalWrite(DE_RE_PIN, HIGH); 
-    delayMicroseconds(500); 
+    delayMicroseconds(1000); 
 }
 void postTransmission() { 
-    delayMicroseconds(500);
+    delayMicroseconds(1000);
     digitalWrite(DE_RE_PIN, LOW); 
 }
 
@@ -36,12 +36,11 @@ bool readRegister(uint16_t reg_addr, uint8_t reg_count, T &value, const char* na
     return false;
 }
 
-// Hlavní čtení všech dat najednou
 bool readBatteryData()
 {
     bool ok = true;
     
-    // Blok 1: 30258-30263 (Výkon, Proud baterie, Proud sítě)
+    // Blok 1: výkon, proud
     uint8_t res = node.readHoldingRegisters(REG_BATTERY_POWER, 6);
     if (res == node.ku8MBSuccess) {
         int32_t raw_P = (int32_t)(((uint32_t)node.getResponseBuffer(0) << 16) | node.getResponseBuffer(1));
@@ -57,9 +56,9 @@ bool readBatteryData()
         ok = false; 
     }
 
-    delay(100); // Pauza mezi požadavky
+    delay(200); // ← zvýšit ze 100 na 200
 
-    // Blok 2: SOC (33000)
+    // Blok 2: SOC
     uint16_t rawSOC = 0;
     if (readRegister<uint16_t>(REG_SOC, 1, rawSOC, "SOC")) {
         battery_soc = rawSOC / 100.0;
@@ -69,6 +68,8 @@ bool readBatteryData()
 
     return ok;
 }
+
+
 
 void setup() {
     Serial2.begin(9600, SERIAL_8N1, MODBUS_RX_PIN, MODBUS_TX_PIN);
