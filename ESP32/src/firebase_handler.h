@@ -17,8 +17,11 @@ FirebaseConfig config;
 void setup() {
     config.database_url = FIREBASE_DATABASE_URL;
     config.api_key = API_KEY;
+    
+    // Povolit přístup bez přihlášení (pokud jsou pravidla v Firebase na "true")
+    config.signer.test_mode = true;
 
-    // Connect without auth or use anonymous login for simple RTDB
+    // Connect without auth
     Firebase.begin(&config, &auth);
     Firebase.reconnectWiFi(true);
 

@@ -79,9 +79,6 @@ void setup() {
     // Inicializace Modbus
     ModbusHandler::setup();
     
-    // Inicializace Firebase
-    FirebaseHandler::setup();
-    
     // Inicializace výstupů
     for (int pin : outputs) {
         pinMode(pin, OUTPUT);
@@ -97,6 +94,9 @@ void setup() {
         Serial.print(".");
         att++;
     }
+
+    // Inicializace Firebase až po WiFi
+    FirebaseHandler::setup();
 
     // Načteme SHA z paměti pro UI Dashboard
     currentVersion = OTA::getCurrentSHA();
@@ -124,7 +124,9 @@ void loop() {
     }
 
     // Čtení dat z měniče
-    if(ModbusHandler::update())
+    bool modbusOK = ModbusHandler::update();
+    
+    if(modbusOK)
     {
         static unsigned long lastSwitch = 0;
         
@@ -142,8 +144,12 @@ void loop() {
                 lastSwitch = millis();
             }
         }
+    }
 
-        // Push to Firebase RTDB for the modern Vercel UI
+    // Push to Firebase always if connected (diagnostics)
+    static unsigned long lastFirebasePush = 0;
+    if (millis() - lastFirebasePush > 5000) {
+        lastFirebasePush = millis();
         FirebaseHandler::updateData(
             ModbusHandler::battery_P,
             ModbusHandler::battery_I,
@@ -153,5 +159,4 @@ void loop() {
             currentVersion
         );
     }
-    
 }
