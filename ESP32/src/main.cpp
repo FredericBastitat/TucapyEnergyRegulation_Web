@@ -1,10 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WebServer.h>
-#include <WebSocketsServer.h>
 #include "ota.h"
 #include "logger.h"
-#include "webui.h"
 #include "modbus_handler.h"
 #include "firebase_handler.h"
 
@@ -32,26 +29,7 @@ const int n_outputs=8;
 bool power_mode=false;
 int idx=0;
 
-WebSocketsServer webSocket(81);
-WebServer server(80);
 String logBuffer = "";
-
-void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-    if (type == WStype_CONNECTED) {
-        webSocket.sendTXT(num, logBuffer);
-    }
-}
-
-void handleRoot() {
-  server.send(200, "text/html", WebUI::getDashboardHTML(
-    ModbusHandler::battery_P, 
-    ModbusHandler::battery_I, 
-    ModbusHandler::grid_I, 
-    ModbusHandler::battery_soc, 
-    ModbusHandler::status_msg, 
-    logBuffer, 
-    currentVersion));
-}
 
 void turn_on()
 {
@@ -75,7 +53,6 @@ void turn_off()
 void setup() {
     Serial.begin(115200);
     
-
     // Inicializace Modbus
     ModbusHandler::setup();
     
@@ -87,7 +64,7 @@ void setup() {
     
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     
-    // Čekáme na WiFi pro správný start OTA a logů
+    // Čekáme na WiFi
     int att = 0;
     while (WiFi.status() != WL_CONNECTED && att < 30) {
         delay(500);
@@ -103,19 +80,11 @@ void setup() {
     if (currentVersion == "") currentVersion = "Manual-USB";
     else currentVersion = currentVersion.substring(0, 7);
 
-    server.on("/", handleRoot);
-    server.begin();
-
-    webSocket.begin();
-    webSocket.onEvent(onWebSocketEvent);
-
     webLog("Start systemu - verze " + currentVersion);
 }
 
 void loop() {
     static unsigned long lastOTA = millis();
-    server.handleClient();
-    webSocket.loop();
 
     // OTA kontrola az po par minutach
     if (millis() > 60000 && (millis() - lastOTA > 60000)) {
@@ -146,7 +115,7 @@ void loop() {
         }
     }
 
-    // Push to Firebase always if connected (diagnostics)
+    // Push to Firebase
     static unsigned long lastFirebasePush = 0;
     if (millis() - lastFirebasePush > 5000) {
         lastFirebasePush = millis();
