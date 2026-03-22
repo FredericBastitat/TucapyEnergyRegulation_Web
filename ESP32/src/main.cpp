@@ -10,17 +10,17 @@
 String currentVersion = "USB-Manual";
 
 // --- OVLÁDÁNÍ VÝSTUPŮ ---
-#define OUT1 19
-#define OUT2 21
-#define OUT3 22
-#define OUT4 23
-#define OUT5 25
-#define OUT6 26
-#define OUT7 27
-#define OUT8 32
+#define OUT1 23
+#define OUT2 22
+#define OUT3 21
+#define OUT4 19
+#define OUT5 32
+#define OUT6 25
+#define OUT7 26
+#define OUT8 27
 const int outputs[] = {OUT1, OUT2, OUT3, OUT4, OUT5, OUT6, OUT7, OUT8};
 const int n_outputs=8;
-#define HORNI_PROUD 2
+#define HORNI_PROUD 0.9
 #define SPODNI_PROUD 0  
 
 #define HORNI_SOC 80

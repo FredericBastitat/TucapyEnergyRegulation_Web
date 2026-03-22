@@ -44,6 +44,7 @@ bool readBatteryData()
     int32_t raw_P = 0;
     if (readRegister<int32_t>(REG_BATTERY_POWER, 2, raw_P, "BP")) {
         battery_P = raw_P / 1000.0;
+        battery_P *= -1;
     } else ok = false;
 
     delay(100); 
