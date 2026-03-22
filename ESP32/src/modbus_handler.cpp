@@ -18,11 +18,11 @@ void postTransmission() {
     digitalWrite(DE_RE_PIN, LOW); 
 }
 
-// Šablona pro čtení registrů (používá se pro SOC a případně jiné jednotlivé čtení)
+// Šablona pro čtení registrů (podporuje Holding 0x03 i Input 0x04)
 template<typename T>
-bool readRegister(uint16_t reg_addr, uint8_t reg_count, T &value, const char* name)
+bool readRegister(uint16_t reg_addr, uint8_t reg_count, T &value, const char* name, bool isInput = false)
 {
-    uint8_t res = node.readHoldingRegisters(reg_addr, reg_count);
+    uint8_t res = isInput ? node.readInputRegisters(reg_addr, reg_count) : node.readHoldingRegisters(reg_addr, reg_count);
     if (res == node.ku8MBSuccess)
     {
         if (reg_count == 1)
@@ -40,25 +40,35 @@ bool readBatteryData()
 {
     bool ok = true;
 
+    // 1. Výkon (Holding)
     int32_t raw_P = 0;
-    if (readRegister<int32_t>(REG_BATTERY_POWER, 2, raw_P,"BP"))
+    if (readRegister<int32_t>(REG_BATTERY_POWER, 2, raw_P, "BP")) {
         battery_P = raw_P / 1000.0;
-    else ok = false;
+    } else ok = false;
 
+    delay(100); 
+
+    // 2. SOC (Holding - změněno z Input kvůli chybě 0xe2)
     uint16_t rawSOC = 0;
-    if (readRegister<uint16_t>(REG_SOC, 1, rawSOC,"SOC"))
-        battery_soc = rawSOC / 100.0;
-    else ok = false;
+    if (readRegister<uint16_t>(REG_SOC, 1, rawSOC, "SOC")) { 
+        battery_soc = rawSOC / 1.0; // Většina měničů vrací přímo %
+    } else ok = false;
 
+    delay(100);
+
+    // 3. Proud baterie (Holding)
     int16_t rawI = 0;
-    if (readRegister<int16_t>(REG_BATTERY_I, 1, rawI,"BI"))
-        battery_I = (rawI / 10.0) * -1;
-    else ok = false;
+    if (readRegister<int16_t>(REG_BATTERY_I, 1, rawI, "BI")) {
+        battery_I = (rawI / 100.0) * -1.0;
+    } else ok = false;
 
+    delay(100);
+
+    // 4. Proud sítě (Holding - změněno z Input kvůli chybě 0xe2)
     int32_t rawGrid = 0;
-    if (readRegister<int32_t>(REG_GRID_I, 2, rawGrid,"GI"))
-        grid_I = (rawGrid / 1000.0) * -1;
-    else ok = false;
+    if (readRegister<int32_t>(REG_GRID_I, 2, rawGrid, "GI")) {
+        grid_I = (rawGrid / 1000.0) * -1.0;
+    } else ok = false;
 
     return ok;
 }
