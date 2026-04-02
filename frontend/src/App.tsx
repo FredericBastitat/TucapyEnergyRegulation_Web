@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Terminal,
   RefreshCcw,
-  Info,
   TrendingUp,
   Settings,
   Database,
@@ -221,24 +220,24 @@ const App: React.FC = () => {
             <TrendingUp size={20} />
             <span>Analýza dat</span>
           </button>
-            {isAdmin && (
-              <>
-                <button 
-                  className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('settings')}
-                >
-                  <Settings size={20} />
-                  <span>Konfigurace</span>
-                </button>
-                <button 
-                  className={`nav-item ${activeTab === 'console' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('console')}
-                >
-                  <Terminal size={20} />
-                  <span>Systémová konzole</span>
-                </button>
-              </>
-            )}
+          {isAdmin && (
+            <>
+              <button
+                className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('settings')}
+              >
+                <Settings size={20} />
+                <span>Konfigurace</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'console' ? 'active' : ''}`}
+                onClick={() => setActiveTab('console')}
+              >
+                <Terminal size={20} />
+                <span>Systémová konzole</span>
+              </button>
+            </>
+          )}
         </nav>
         <div className="sidebar-footer">
           {isAdmin ? (
@@ -352,17 +351,7 @@ const App: React.FC = () => {
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="status-message"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                  <Info size={16} />
-                  {data.statusMsg}
-                </div>
-              </motion.div>
+
             </motion.div>
           ) : activeTab === 'graphs' ? (
             <motion.div
@@ -445,18 +434,18 @@ const App: React.FC = () => {
                   <Settings size={20} />
                   <span>Systémové Limity a Nastavení</span>
                 </div>
-                
+
                 <div className="settings-grid">
                   <div className="settings-group">
                     <h4> Proudové limity (A)</h4>
                     <div className="input-row">
                       <div className="field">
                         <label>Horní proud (zapnutí)</label>
-                        <input type="number" value={settings.upperCurrent} onChange={(e) => setSettings({...settings, upperCurrent: Number(e.target.value)})} />
+                        <input type="number" value={settings.upperCurrent} onChange={(e) => setSettings({ ...settings, upperCurrent: Number(e.target.value) })} />
                       </div>
                       <div className="field">
                         <label>Spodní proud (vypnutí)</label>
-                        <input type="number" value={settings.lowerCurrent} onChange={(e) => setSettings({...settings, lowerCurrent: Number(e.target.value)})} />
+                        <input type="number" value={settings.lowerCurrent} onChange={(e) => setSettings({ ...settings, lowerCurrent: Number(e.target.value) })} />
                       </div>
                     </div>
                   </div>
@@ -466,11 +455,11 @@ const App: React.FC = () => {
                     <div className="input-row">
                       <div className="field">
                         <label>Horní SOC (start aktivace)</label>
-                        <input type="number" value={settings.upperSoc} onChange={(e) => setSettings({...settings, upperSoc: Number(e.target.value)})} />
+                        <input type="number" value={settings.upperSoc} onChange={(e) => setSettings({ ...settings, upperSoc: Number(e.target.value) })} />
                       </div>
                       <div className="field">
                         <label>Spodní SOC (totální vypnutí)</label>
-                        <input type="number" value={settings.lowerSoc} onChange={(e) => setSettings({...settings, lowerSoc: Number(e.target.value)})} />
+                        <input type="number" value={settings.lowerSoc} onChange={(e) => setSettings({ ...settings, lowerSoc: Number(e.target.value) })} />
                       </div>
                     </div>
                   </div>
