@@ -8,11 +8,24 @@ import {
   Terminal,
   RefreshCcw,
   Info,
+  TrendingUp,
+  Settings,
   Database,
   User as UserIcon,
   LogOut,
   X
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import {
@@ -39,6 +52,14 @@ interface DashboardData {
   lastUpdate: number;
 }
 
+interface HistoryPoint {
+  time: string;
+  soc: number;
+  power: number;
+  grid: number;
+  current: number;
+}
+
 const App: React.FC = () => {
   const [data, setData] = useState<DashboardData>({
     batteryPower: 0,
@@ -59,7 +80,16 @@ const App: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'console'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'graphs' | 'console' | 'settings'>('dashboard');
+  const [dataHistory, setDataHistory] = useState<HistoryPoint[]>([]);
+
+  // Settings state (visual only for now)
+  const [settings, setSettings] = useState({
+    upperCurrent: 2,
+    lowerCurrent: 0,
+    upperSoc: 80,
+    lowerSoc: 60
+  });
 
   // Force re-render every 30s to update "Online/Offline" status
   const [, setTick] = useState(0);
@@ -108,6 +138,25 @@ const App: React.FC = () => {
                 connected: true,
                 lastUpdate: val.last_update || 0
               }));
+
+              // Add to history for real-time charts
+              const now = new Date();
+              const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+              setDataHistory(prev => {
+                const newPoint: HistoryPoint = {
+                  time: timeStr,
+                  soc: val.battery_soc || 0,
+                  power: val.battery_P || 0,
+                  grid: val.grid_I || 0,
+                  current: val.battery_I || 0
+                };
+
+                // Keep last 100 points
+                const next = [...prev, newPoint];
+                if (next.length > 100) return next.slice(next.length - 100);
+                return next;
+              });
             } else {
               setData(prev => ({
                 ...prev,
@@ -158,22 +207,38 @@ const App: React.FC = () => {
           <span>TUCAPY</span>
         </div>
         <nav className="sidebar-nav">
-          <button 
+          <button
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('dashboard')}
           >
             <LayoutDashboard size={20} />
             <span>Monitoring</span>
           </button>
-          {isAdmin && (
-            <button 
-              className={`nav-item ${activeTab === 'console' ? 'active' : ''}`}
-              onClick={() => setActiveTab('console')}
-            >
-              <Terminal size={20} />
-              <span>Systémová konzole</span>
-            </button>
-          )}
+          <button
+            className={`nav-item ${activeTab === 'graphs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('graphs')}
+          >
+            <TrendingUp size={20} />
+            <span>Analýza dat</span>
+          </button>
+            {isAdmin && (
+              <>
+                <button 
+                  className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('settings')}
+                >
+                  <Settings size={20} />
+                  <span>Konfigurace</span>
+                </button>
+                <button 
+                  className={`nav-item ${activeTab === 'console' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('console')}
+                >
+                  <Terminal size={20} />
+                  <span>Systémová konzole</span>
+                </button>
+              </>
+            )}
         </nav>
         <div className="sidebar-footer">
           {isAdmin ? (
@@ -221,7 +286,7 @@ const App: React.FC = () => {
             )}
             <div className={`status-badge ${data.connected ? '' : 'offline'}`}>
               <Database size={14} />
-              {data.connected ? 'Cloud OK' : 'Connecting...'}
+              {data.connected ? 'Database Online' : 'Connecting...'}
             </div>
           </motion.div>
         </header>
@@ -299,6 +364,126 @@ const App: React.FC = () => {
                 </div>
               </motion.div>
             </motion.div>
+          ) : activeTab === 'graphs' ? (
+            <motion.div
+              key="graphs"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="view-container graphs-view"
+            >
+              <div className="charts-grid">
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <Battery size={16} />
+                    <span>Battery State of Charge</span>
+                  </div>
+                  <div className="chart-body">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <AreaChart data={dataHistory}>
+                        <defs>
+                          <linearGradient id="colorSoc" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                        <XAxis dataKey="time" hide />
+                        <YAxis domain={[0, 100]} stroke="#475569" fontSize={12} unit="%" />
+                        <Tooltip
+                          contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
+                          itemStyle={{ color: '#38bdf8' }}
+                        />
+                        <Area type="monotone" dataKey="soc" stroke="#38bdf8" fillOpacity={1} fill="url(#colorSoc)" strokeWidth={3} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <Zap size={16} />
+                    <span>Battery Power & Grid Flow</span>
+                  </div>
+                  <div className="chart-body">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={dataHistory}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                        <XAxis dataKey="time" hide />
+                        <YAxis stroke="#475569" fontSize={12} />
+                        <Tooltip
+                          contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
+                        />
+                        <Line type="monotone" dataKey="power" stroke="#fbbf24" strokeWidth={3} dot={false} name="Power (kW)" />
+                        <Line type="monotone" dataKey="grid" stroke="#10b981" strokeWidth={2} dot={false} name="Grid (A)" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '20px' }}>
+                <StatCard
+                  icon={<TrendingUp size={20} color="#38bdf8" />}
+                  label="Average SOC (current session)"
+                  value={dataHistory.length > 0 ? Math.round(dataHistory.reduce((a, b) => a + b.soc, 0) / dataHistory.length) : 0}
+                  unit="%"
+                  index={0}
+                />
+              </div>
+            </motion.div>
+          ) : activeTab === 'settings' ? (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="view-container"
+            >
+              <div className="settings-card">
+                <div className="settings-header">
+                  <Settings size={20} />
+                  <span>Systémové Limity a Nastavení</span>
+                </div>
+                
+                <div className="settings-grid">
+                  <div className="settings-group">
+                    <h4> Proudové limity (A)</h4>
+                    <div className="input-row">
+                      <div className="field">
+                        <label>Horní proud (zapnutí)</label>
+                        <input type="number" value={settings.upperCurrent} onChange={(e) => setSettings({...settings, upperCurrent: Number(e.target.value)})} />
+                      </div>
+                      <div className="field">
+                        <label>Spodní proud (vypnutí)</label>
+                        <input type="number" value={settings.lowerCurrent} onChange={(e) => setSettings({...settings, lowerCurrent: Number(e.target.value)})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="settings-group">
+                    <h4> Baterie SOC limity (%)</h4>
+                    <div className="input-row">
+                      <div className="field">
+                        <label>Horní SOC (start aktivace)</label>
+                        <input type="number" value={settings.upperSoc} onChange={(e) => setSettings({...settings, upperSoc: Number(e.target.value)})} />
+                      </div>
+                      <div className="field">
+                        <label>Spodní SOC (totální vypnutí)</label>
+                        <input type="number" value={settings.lowerSoc} onChange={(e) => setSettings({...settings, lowerSoc: Number(e.target.value)})} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-footer">
+                  <p className="hint">Změny se zatím neukládají do cloudu.</p>
+                  <button className="save-btn" onClick={() => alert('Vizuál ušetřen, ukládání zatím není implementováno.')}>
+                    Uložit konfiguraci
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           ) : (
             <motion.div
               key="console"
@@ -327,21 +512,17 @@ const App: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        <footer style={{ marginTop: 'auto', paddingTop: '40px' }}>
-          &copy; 2024 Tucapy Energy Regulation &bull; {data.version}
-        </footer>
       </div>
 
       <AnimatePresence>
         {showLogin && (
-          <motion.div 
+          <motion.div
             className="modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div 
+            <motion.div
               className="login-modal"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -354,22 +535,22 @@ const App: React.FC = () => {
               <form onSubmit={handleLogin}>
                 <div className="input-group">
                   <label>E-mail</label>
-                  <input 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@example.com"
-                    required 
+                    required
                   />
                 </div>
                 <div className="input-group">
                   <label>Heslo</label>
-                  <input 
-                    type="password" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    required 
+                    required
                   />
                 </div>
                 {authError && <div className="auth-error-msg">{authError}</div>}
