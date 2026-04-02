@@ -43,7 +43,6 @@ void updateData(float battery_P, float battery_I, float grid_I, float battery_so
         return;
     }
 
-    // Oriznuty log buffer (max 1500 znaku)
     String trimmedLogs = consoleLogs;
     if (trimmedLogs.length() > 1500) {
         trimmedLogs = trimmedLogs.substring(trimmedLogs.length() - 1500);

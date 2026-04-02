@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Zap, 
-  Battery, 
-  Activity, 
-  Cpu, 
-  Terminal, 
-  RefreshCcw, 
-  Wifi, 
-  WifiOff, 
+import {
+  Zap,
+  Battery,
+  Activity,
+  Cpu,
+  Terminal,
+  RefreshCcw,
   Info,
-  Lock
+  Lock,
+  Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
@@ -61,7 +60,7 @@ const App: React.FC = () => {
     signInAnonymously(auth)
       .then(() => {
         setData(prev => ({ ...prev, authenticated: true }));
-        
+
         const energyRef = ref(db, 'energy_data');
 
         // Subscribe to energy updates (includes console logs)
@@ -102,7 +101,7 @@ const App: React.FC = () => {
   return (
     <div className="app-container">
       <header>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="header-left"
@@ -110,8 +109,8 @@ const App: React.FC = () => {
           <h1>Tucapy Energy</h1>
           <div className="version-tag">{data.version}</div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           className="header-right"
@@ -124,45 +123,45 @@ const App: React.FC = () => {
             </div>
           )}
           <div className={`status-badge ${data.connected ? '' : 'offline'}`}>
-            {data.connected ? <Wifi size={14} /> : <WifiOff size={14} />}
-            {data.connected ? 'Cloud Connected' : 'Connecting...'}
+            <Database size={14} />
+            {data.connected ? 'Database Connected' : 'Connecting...'}
           </div>
         </motion.div>
       </header>
 
       <div className="grid">
-        <StatCard 
-          icon={<Zap size={20} color="#38bdf8" />} 
-          label="Battery Power" 
-          value={data.batteryPower} 
-          unit="kW" 
+        <StatCard
+          icon={<Zap size={20} color="#38bdf8" />}
+          label="Battery Power"
+          value={data.batteryPower}
+          unit="kW"
           index={0}
         />
-        <StatCard 
-          icon={<Activity size={20} color="#10b981" />} 
-          label="Battery Current" 
-          value={data.batteryCurrent} 
-          unit="A" 
+        <StatCard
+          icon={<Activity size={20} color="#10b981" />}
+          label="Battery Current"
+          value={data.batteryCurrent}
+          unit="A"
           index={1}
         />
-        <StatCard 
-          icon={<Cpu size={20} color="#fbbf24" />} 
-          label="Grid Current" 
-          value={data.gridCurrent} 
-          unit="A" 
+        <StatCard
+          icon={<Cpu size={20} color="#fbbf24" />}
+          label="Grid Current"
+          value={data.gridCurrent}
+          unit="A"
           index={2}
         />
-        <StatCard 
-          icon={<Battery size={20} color="#38bdf8" />} 
-          label="Battery SOC" 
-          value={data.soc} 
-          unit="%" 
+        <StatCard
+          icon={<Battery size={20} color="#38bdf8" />}
+          label="Battery SOC"
+          value={data.soc}
+          unit="%"
           showBar
           index={3}
         />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -182,7 +181,7 @@ const App: React.FC = () => {
         </div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
@@ -194,7 +193,7 @@ const App: React.FC = () => {
         </div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -235,7 +234,7 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ icon, label, value, unit, showBar, index }) => {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 * index }}
@@ -247,7 +246,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, unit, showBar, 
       </div>
       <div className="card-value-container">
         <AnimatePresence mode="wait">
-          <motion.span 
+          <motion.span
             key={value}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -262,12 +261,12 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, unit, showBar, 
       </div>
       {showBar && (
         <div className="soc-bar-container">
-          <motion.div 
-            className="soc-bar" 
+          <motion.div
+            className="soc-bar"
             initial={{ width: 0 }}
             animate={{ width: `${value}%` }}
             transition={{ type: "spring", stiffness: 50 }}
-            style={{ 
+            style={{
               backgroundColor: value < 20 ? '#ef4444' : (value < 50 ? '#fbbf24' : '#10b981')
             }}
           />
