@@ -4,7 +4,7 @@
 
 namespace ModbusHandler {
 
-// Konfigurace pinů
+// Comunication pins
 #define MODBUS_RX_PIN 16
 #define MODBUS_TX_PIN 17
 #define DE_RE_PIN 18 
@@ -16,7 +16,7 @@ namespace ModbusHandler {
 #define REG_GRID_I        11000
 #define REG_SOC           33000
 
-// Data střídače (exportovaná pro WebUI)
+// Data
 extern float battery_P;
 extern float battery_soc;
 extern float battery_I;
@@ -25,6 +25,6 @@ extern String status_msg;
 
 // Funkce
 void setup();
-bool update(); // Volá se v loop()
+bool update();
 
 } // namespace ModbusHandler

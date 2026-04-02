@@ -7,7 +7,7 @@
 
 #define WIFI_SSID "DvorNet"
 #define WIFI_PASS "dvor62tuc"
-String currentVersion = "USB-Manual";
+String currentVersion = "";
 
 // --- OVLÁDÁNÍ VÝSTUPŮ ---
 #define OUT1 23
@@ -53,18 +53,15 @@ void turn_off()
 void setup() {
     Serial.begin(115200);
     
-    // Inicializace Modbus
-    ModbusHandler::setup();
     
-    // Inicializace výstupů
     for (int pin : outputs) {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, HIGH);
     }
     
+    //Wfi
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     
-    // Čekáme na WiFi
     int att = 0;
     while (WiFi.status() != WL_CONNECTED && att < 30) {
         delay(500);
@@ -72,12 +69,13 @@ void setup() {
         att++;
     }
 
-    // Inicializace Firebase až po WiFi
+    
+    ModbusHandler::setup();
     FirebaseHandler::setup();
 
-    // Načteme SHA z paměti pro UI Dashboard
+    // Vesion (basead on commit)
     currentVersion = OTA::getCurrentSHA();
-    if (currentVersion == "") currentVersion = "Manual-USB";
+    if (currentVersion == "") currentVersion = "boot from USB";
     else currentVersion = currentVersion.substring(0, 7);
 
     webLog("Start systemu - verze " + currentVersion);

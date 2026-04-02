@@ -59,7 +59,7 @@ void check() {
 
 
     if (latestSHA == currentSHA) {
-        webLog("✓ Firmware je aktualni.");
+        webLog("Firmware je aktualni.");
         return;
     }
 
