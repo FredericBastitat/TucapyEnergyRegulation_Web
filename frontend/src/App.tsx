@@ -268,13 +268,16 @@ const App: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             className="header-left"
           >
-            {isAdmin ? (
-              <h2>{activeTab === 'dashboard' ? 'Energetický přehled' : 'Systémové záznamy'}</h2>
-            ) : (
-              <>
-                <h1>Tucapy Energy</h1>
-                <div className="version-tag">{data.version}</div>
-              </>
+            <div className="title-row">
+              <h1>Tucapy Energy</h1>
+              <div className="version-tag">{data.version}</div>
+            </div>
+            {isAdmin && (
+              <div className="admin-subtitle">
+                {activeTab === 'dashboard' ? 'Energetický přehled' : 
+                 activeTab === 'graphs' ? 'Analýza dat' :
+                 activeTab === 'settings' ? 'Konfigurace' : 'Systémová konzole'}
+              </div>
             )}
           </motion.div>
 

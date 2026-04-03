@@ -55,6 +55,7 @@ void shutdown()
     {
         digitalWrite(pin,HIGH);
     }
+    idx = 0;
 }
 
 
@@ -83,11 +84,10 @@ void setup() {
 
     if(FirebaseHandler::recoverData(idx,power_mode))
     {
-        for (size_t i = 0; i < idx; i++)
+        for (int i = 0; i < idx; i++)
         {
-            digitalWrite(i,LOW);
+            digitalWrite(outputs[i],LOW);
         }
-        
     }
 
     // Vesion (basead on commit)
@@ -114,10 +114,10 @@ void loop() {
     {
         static unsigned long lastSwitch = 0;
         
-        if(ModbusHandler::battery_soc<SPODNI_SOC)
+        if(ModbusHandler::battery_soc < SPODNI_SOC)
         {
-            power_mode=false;
-            if(outputs[0]==LOW)shutdown();
+            power_mode = false;
+            if(idx > 0) shutdown();
         }
         if(ModbusHandler::battery_soc>=HORNI_SOC)power_mode=true;
         
