@@ -9,7 +9,6 @@
 #define WIFI_PASS "dvor62tuc"
 String currentVersion = "";
 
-// --- OVLÁDÁNÍ VÝSTUPŮ ---
 #define OUT1 23
 #define OUT2 22
 #define OUT3 21
@@ -25,6 +24,9 @@ const int n_outputs=8;
 
 #define HORNI_SOC 80
 #define SPODNI_SOC 60
+
+#define OTA_INTERVAL 30000
+
 
 bool power_mode=false;
 int idx=0;
@@ -102,12 +104,12 @@ void loop() {
     static unsigned long lastOTA = millis();
 
     // OTA kontrola az po par minutach
-    if (millis() > 60000 && (millis() - lastOTA > 60000)) {
+    if (millis() > OTA_INTERVAL && (millis() - lastOTA > OTA_INTERVAL)) {
         lastOTA = millis(); 
         OTA::check();
     }
 
-    // Čtení dat z měniče
+
     bool modbusOK = ModbusHandler::update();
     
     if(modbusOK)
