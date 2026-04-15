@@ -59,6 +59,8 @@ interface HistoryPoint {
   current: number;
 }
 
+const OFFLINE_TIMEOUT_S = 60; // 1 minute
+
 const App: React.FC = () => {
   const [data, setData] = useState<DashboardData>({
     batteryPower: 0,
@@ -116,8 +118,8 @@ const App: React.FC = () => {
     }
   }, [data.logs]);
 
-  // Check if system is online (last update < 5 minutes)
-  const isSystemOnline = data.lastUpdate > 0 && (Math.floor(Date.now() / 1000) - data.lastUpdate) < 300;
+  // Check if system is online (last update < 1 minute)
+  const isSystemOnline = data.lastUpdate > 0 && (Math.floor(Date.now() / 1000) - data.lastUpdate) < OFFLINE_TIMEOUT_S;
 
   // Handle Authentication and Firebase connection
   useEffect(() => {
