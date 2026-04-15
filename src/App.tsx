@@ -26,7 +26,7 @@ import {
   Area
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import {
   signInAnonymously,
   onAuthStateChanged,
@@ -89,13 +89,16 @@ const App: React.FC = () => {
     else if (platform.includes('linux')) setOs('linux');
   }, []);
 
-  // Settings state (visual only for now)
+  // Settings state
   const [settings, setSettings] = useState({
     upperCurrent: 2,
     lowerCurrent: 0,
     upperSoc: 80,
     lowerSoc: 60
   });
+
+  // Save status: 'idle' | 'saving' | 'saved' | 'error'
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Force re-render every 30s to update "Online/Offline" status
   const [, setTick] = useState(0);
@@ -190,6 +193,22 @@ const App: React.FC = () => {
             }));
           }
         });
+
+        // --- 4. KONFIGURACE (pouze pro admina) ---
+        if (!user.isAnonymous) {
+          const configRef = ref(db, 'config_data');
+          onValue(configRef, (snapshot) => {
+            if (snapshot.exists()) {
+              const val = snapshot.val();
+              setSettings({
+                upperCurrent: val.upper_current ?? 2,
+                lowerCurrent: val.lower_current ?? 0,
+                upperSoc: val.upper_soc ?? 80,
+                lowerSoc: val.lower_soc ?? 60
+              });
+            }
+          }, { onlyOnce: true });
+        }
       } else {
         // Fallback to anonymous for basic viewing
         setActiveTab('dashboard');
@@ -224,6 +243,24 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     signOut(auth);
+  };
+
+  const handleSaveSettings = async () => {
+    setSaveStatus('saving');
+    try {
+      await set(ref(db, 'config_data'), {
+        upper_current: settings.upperCurrent,
+        lower_current: settings.lowerCurrent,
+        upper_soc: settings.upperSoc,
+        lower_soc: settings.lowerSoc
+      });
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Chyba při ukládání konfigurace:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
+    }
   };
 
   return (
@@ -497,9 +534,21 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="settings-footer">
-                  <p className="hint">Změny se zatím neukládají do cloudu.</p>
-                  <button className="save-btn" onClick={() => alert('Vizuál ušetřen, ukládání zatím není implementováno.')}>
-                    Uložit konfiguraci
+                  {saveStatus === 'saved' && (
+                    <p className="hint hint--success">✓ Konfigurace uložena do databáze.</p>
+                  )}
+                  {saveStatus === 'error' && (
+                    <p className="hint hint--error">✗ Chyba při ukládání. Zkontrolujte připojení.</p>
+                  )}
+                  {saveStatus === 'idle' && (
+                    <p className="hint">Změny se uloží do Firebase a ESP32 je načte automaticky.</p>
+                  )}
+                  <button
+                    className={`save-btn ${saveStatus === 'saving' ? 'saving' : ''}`}
+                    onClick={handleSaveSettings}
+                    disabled={saveStatus === 'saving'}
+                  >
+                    {saveStatus === 'saving' ? 'Ukládání...' : 'Uložit konfiguraci'}
                   </button>
                 </div>
               </div>
