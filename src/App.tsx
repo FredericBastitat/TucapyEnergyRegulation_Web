@@ -411,7 +411,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="relays-grid">
                   {[...Array(8)].map((_, i) => (
-                    <div key={i} className={`relay-item ${i < data.relayIdx ? 'active' : ''}`}>
+                    <div key={i} className={`relay-item ${isSystemOnline && i < data.relayIdx ? 'active' : ''}`}>
                       <div className="relay-led" />
                       <span className="relay-label">OUT{i + 1}</span>
                     </div>
