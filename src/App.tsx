@@ -96,7 +96,8 @@ const App: React.FC = () => {
     upperCurrent: 2,
     lowerCurrent: 0,
     upperSoc: 80,
-    lowerSoc: 60
+    lowerSoc: 60,
+    heat: false
   });
 
   // Save status: 'idle' | 'saving' | 'saved' | 'error'
@@ -206,7 +207,8 @@ const App: React.FC = () => {
                 upperCurrent: val.upper_current ?? 2,
                 lowerCurrent: val.lower_current ?? 0,
                 upperSoc: val.upper_soc ?? 80,
-                lowerSoc: val.lower_soc ?? 60
+                lowerSoc: val.lower_soc ?? 60,
+                heat: val.heat ?? false
               });
             }
           }, { onlyOnce: true });
@@ -254,7 +256,8 @@ const App: React.FC = () => {
         upper_current: settings.upperCurrent,
         lower_current: settings.lowerCurrent,
         upper_soc: settings.upperSoc,
-        lower_soc: settings.lowerSoc
+        lower_soc: settings.lowerSoc,
+        heat: settings.heat
       });
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -506,6 +509,21 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="settings-grid">
+                  <div className="settings-group">
+                    <h4>Topení</h4>
+
+                    <button
+                      className={`heat-btn ${settings.heat ? 'active' : ''}`}
+                      onClick={() =>
+                        setSettings(prev => ({
+                          ...prev,
+                          heat: !prev.heat
+                        }))
+                      }
+                    >
+                      Heat: {settings.heat ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
                   <div className="settings-group">
                     <h4> Proudové limity (A)</h4>
                     <div className="input-row">
